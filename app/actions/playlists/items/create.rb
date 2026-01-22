@@ -17,14 +17,17 @@ module Terminus
             required(:playlist_item).hash { required(:screen_id).filled :integer }
           end
 
-          def handle request, response
-            parameters = request.params
-            playlist = playlist_repository.find parameters[:playlist_id]
+           def handle request, response
+             parameters = request.params
+             playlist = playlist_repository.find parameters[:playlist_id]
 
-            halt :unprocessable_content unless parameters.valid?
-
-            response.render show_view, item: create(playlist, parameters), layout: false
-          end
+             if parameters.valid?
+               item = create(playlist, parameters)
+               response.redirect routes.path(:playlist, id: playlist.id), success: "Item added successfully"
+             else
+               halt :unprocessable_content
+             end
+           end
 
           private
 

@@ -1,1 +1,236 @@
-<%== body %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Clock</title>
+    <link rel="stylesheet" href="https://usetrmnl.com/css/latest/plugins.css">
+    <style>
+        body {
+            background-color: #fff !important;
+        }
+
+        .world-clock-container {
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            box-sizing: border-box;
+            background-color: #fff;
+        }
+
+        .main-city-section {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .main-city-label {
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .main-city-time {
+            font-size: 4em;
+            font-weight: bold;
+            color: #000;
+            font-family: monospace;
+            line-height: 1;
+        }
+
+        .main-city-date {
+            font-size: 1.5em;
+            color: #333;
+            margin-top: 0.5rem;
+            font-family: monospace;
+        }
+
+        .world-cities-section {
+            flex: 1;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .city-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .city-name {
+            font-size: 0.9em;
+            font-weight: bold;
+            color: #000;
+            margin-bottom: 0.25rem;
+        }
+
+        .city-time {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #000;
+            font-family: monospace;
+            line-height: 1;
+        }
+
+        .city-date {
+            font-size: 0.7em;
+            color: #666;
+            margin-top: 0.25rem;
+            font-family: monospace;
+        }
+
+        /* Bit depth specific styling */
+        {% if model.bit_depth == 1 %}
+        body, .world-clock-container {
+            background-color: #000 !important;
+        }
+        .main-city-time, .city-name, .city-time { color: #fff; }
+        .main-city-label, .main-city-date, .city-date { color: #ccc; }
+        {% elsif model.bit_depth == 2 %}
+        /* For 2-bit displays, maintain white background with black text */
+        {% endif %}
+
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            .world-clock-container {
+                padding: 0.5rem;
+            }
+            .main-city-time {
+                font-size: 3em;
+            }
+            .main-city-date {
+                font-size: 1.2em;
+            }
+            .city-time {
+                font-size: 1.4em;
+            }
+            .world-cities-section {
+                gap: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body class="trmnl environment">
+    <div class="view view--full">
+        <div class="world-clock-container">
+            {% assign cities = cities %}
+            {% assign main_city = main_city %}
+
+            <!-- Main City - Large Display -->
+            <div class="main-city-section">
+                <div class="main-city-label">{{ main_city.name }}</div>
+                <div class="main-city-time" id="main-city-time">--:--</div>
+                <div class="main-city-date" id="main-city-date">---</div>
+            </div>
+
+            <!-- World Cities - Horizontal Row -->
+            <div class="world-cities-section">
+                {% for city in cities %}
+                <div class="city-item">
+                    <div class="city-name">{{ city.name }}</div>
+                    <div class="city-time" data-timezone="{{ city.timezone }}">--:--</div>
+                    <div class="city-date" data-timezone-date="{{ city.timezone }}">---</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const cities = {{ cities | json }};
+        const mainCity = {{ main_city | json }};
+
+        // Execute immediately when script loads
+        (function() {
+            // Update immediately
+            updateWorldClock();
+
+            // Continue updating every second
+            setInterval(updateWorldClock, 1000);
+        })();
+
+        function updateWorldClock() {
+            const now = new Date();
+
+            // Update main city time (large display) - 12 hour format
+            const mainCityTimeElement = document.getElementById('main-city-time');
+            const mainCityDateElement = document.getElementById('main-city-date');
+
+            if (mainCityTimeElement && mainCity.timezone) {
+                try {
+                    mainCityTimeElement.textContent = now.toLocaleTimeString('en-US', {
+                        timeZone: mainCity.timezone,
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                    });
+                } catch (error) {
+                    mainCityTimeElement.textContent = '--:--';
+                }
+            }
+
+            if (mainCityDateElement && mainCity.timezone) {
+                try {
+                    mainCityDateElement.textContent = now.toLocaleDateString('en-US', {
+                        timeZone: mainCity.timezone,
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                } catch (error) {
+                    mainCityDateElement.textContent = '---';
+                }
+            }
+
+            // Update world city clocks - 12 hour format
+            const timeElements = document.querySelectorAll('.city-time');
+            const dateElements = document.querySelectorAll('.city-date');
+
+            timeElements.forEach((element, index) => {
+                const city = cities[index];
+                if (city && city.timezone) {
+                    try {
+                        const options = {
+                            timeZone: city.timezone,
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                        };
+                        element.textContent = now.toLocaleTimeString('en-US', options);
+                    } catch (error) {
+                        element.textContent = '--:--';
+                    }
+                }
+            });
+
+            dateElements.forEach((element, index) => {
+                const city = cities[index];
+                if (city && city.timezone) {
+                    try {
+                        const options = {
+                            timeZone: city.timezone,
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric'
+                        };
+                        element.textContent = now.toLocaleDateString('en-US', options);
+                    } catch (error) {
+                        element.textContent = '---';
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

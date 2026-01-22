@@ -43,6 +43,8 @@ module Terminus
             instance.set_viewport(**viewport)
             instance.main_frame.content = work_dir.join("content.html").write(content).read
             instance.network.wait_for_idle duration: 1
+            # Additional delay for JavaScript execution
+            sleep 2
             instance.screenshot path: output_path.to_s
             instance.quit
           end

@@ -1,18 +1,12 @@
 <%= form_for :playlist_item,
-             routes.path(:playlist_item_new, playlist_id: playlist.id),
-             class: "bit-form",
-             **HTMX[ext: :remove] do |form| %>
+             routes.path(:playlist_item_create, playlist_id: playlist.id),
+             method: :post,
+             class: "bit-form" do |form| %>
   <%= render :fields, form:, screen_options:, item:, fields: fields.value, errors: %>
 
-  <div class="form-actions">
-    <%= form.submit "Save",
-                    class: "bit-button-accept",
-                    **HTMX[
-                      post: routes.path(:playlist_item_create, playlist_id: playlist.id),
-                      target: "closest .bit-form",
-                      disabled_elt: "this"
-                    ] %>
+   <div class="form-actions">
+     <%= form.submit "Save", class: "bit-button-accept" %>
 
-    <%= tag.button "Cancel", class: "bit-button-decline", data: {remove: true} %>
-  </div>
+     <%= link_to "Cancel", routes.path(:playlist, id: playlist.id), class: "bit-button-decline" %>
+   </div>
 <% end %>
